@@ -2,23 +2,16 @@
  * See docs/content_blockers.md
  */
 
-import * as path from 'path'
-import { promises as fsAsync } from 'fs'
-import { runCommand } from './utils'
-
-const uniqueSelectorsFile = path.join(__dirname, 'unique_filter_selectors.json')
-const codeFile = path.join(__dirname, '..', '..', 'src', 'sources', 'dom_blockers.ts')
-
-const primeNumber = 1234577
+import * as path from 
 const maxSelectorsCount = 5
 const filterCodeRegex = /(\n(?:export )?function getFilters\(\)(?:: [\w<>,\s]+)? \{)([\s\S]+?)(\n})/
 
-type Filters = Record<string, string[]>
+type Filters = 
 
 run()
 
 async function run() {
-  const [uniqueSelectors, currentFilters] = await Promise.all([
+  const [uniqueSelectors, currentFilters]
     fsAsync.readFile(uniqueSelectorsFile, 'utf8').then<Filters>(JSON.parse),
     parseCurrentFilters(codeFile),
   ])
@@ -69,13 +62,7 @@ function actualizeRules(currentRules: readonly string[], availableRules: readonl
   }
 
   return newRules
-}
 
-async function parseCurrentFilters(filePath: string) {
-  const fileContent = await fsAsync.readFile(filePath, 'utf8')
-  const codeMatch = filterCodeRegex.exec(fileContent)
-  if (!codeMatch) {
-    throw new Error(`The ${JSON.stringify(filePath)} doesn't have the expected pattern of the filter code`)
   }
 
   return new Function(codeMatch[2])() as Filters
@@ -85,15 +72,7 @@ async function insertNewFilters(filePath: string, filters: Filters) {
   const fileContent = await fsAsync.readFile(filePath, 'utf8')
   const newFileContent = fileContent.replace(
     filterCodeRegex,
-    (_whole, prefix, _code, suffix) => `${prefix}${filtersToJs(filters)}${suffix}`,
-  )
-  await fsAsync.writeFile(filePath, newFileContent)
-}
-
-function filtersToJs(filters: Filters) {
-  const decodeBase64Function = 'fromB64'
-  let code = `const ${decodeBase64Function} = atob // Just for better minification\n\n`
-  code += 'return {'
+    (_whole, prefix, _code, suffix) => `${prefix}${filtersToJs(filters)}${
 
   for (const [name, selectors] of Object.entries(filters)) {
     code += `${JSON.stringify(name)}: [`
@@ -120,4 +99,3 @@ function isInappropriateSelector(selector: string) {
   ]
 
   return probes.some((probe) => probe.test(selector))
-}
